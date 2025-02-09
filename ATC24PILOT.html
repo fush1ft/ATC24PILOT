@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTFS Route Planner</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #map {
+            height: 600px; /* Výška mapy */
+            margin-top: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        #routeOutput {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            select, button {
+                font-size: 14px;
+            }
+            #map {
+                height: 400px; /* Menší výška na mobilních zařízeních */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PTFS Route Planner</h1>
+        <p>Select your departure and destination airports to generate a route.</p>
+        <form id="routeForm">
+            <div class="form-group">
+                <label for="from">Departure:</label>
+                <select id="from" required>
+                    <option value="Abandoned Airfield">Abandoned Airfield</option>
+                    <option value="Airbase Garry">Airbase Garry</option>
+                    <option value="AI Najaf Airfield">AI Najaf Airfield</option>
+                    <option value="Barra Airport">Barra Airport</option>
+                    <option value="Boltic Airfield">Boltic Airfield</option>
+                    <option value="Greater Rockford Airport">Greater Rockford Airport</option>
+                    <option value="Grindavik Airport">Grindavik Airport</option>
+                    <option value="Henstridge Airfield">Henstridge Airfield</option>
+                    <option value="Izolirani Airport">Izolirani Airport</option>
+                    <option value="Katcui">Katcui</option>
+                    <option value="Lamaca Airport">Lamaca Airport</option>
+                    <option value="Lukia">Lukia</option>
+                    <option value="McConnell AFB">McConnell AFB</option>
+                    <option value="Mellor">Mellor</option>
+                    <option value="Paphos Airport">Paphos Airport</option>
+                    <option value="Perth International">Perth International</option>
+                    <option value="RAF Scampton">RAF Scampton</option>
+                    <option value="Saba">Saba</option>
+                    <option value="Saint Barthélemy Airport">Saint Barthélemy Airport</option>
+                    <option value="Sauthemptona Airport">Sauthemptona Airport</option>
+                    <option value="Sea Haven">Sea Haven</option>
+                    <option value="Skopelos Airfield">Skopelos Airfield</option>
+                    <option value="Tavaro Seabase">Tavaro Seabase</option>
+                    <option value="Tokyo International Airport">Tokyo International Airport</option>
+                    <option value="Training Centre">Training Centre</option>
+                    <option value="Waterloo">Waterloo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="to">Destination:</label>
+                <select id="to" required>
+                    <option value="Abandoned Airfield">Abandoned Airfield</option>
+                    <option value="Airbase Garry">Airbase Garry</option>
+                    <option value="AI Najaf Airfield">AI Najaf Airfield</option>
+                    <option value="Barra Airport">Barra Airport</option>
+                    <option value="Boltic Airfield">Boltic Airfield</option>
+                    <option value="Greater Rockford Airport">Greater Rockford Airport</option>
+                    <option value="Grindavik Airport">Grindavik Airport</option>
+                    <option value="Henstridge Airfield">Henstridge Airfield</option>
+                    <option value="Izolirani Airport">Izolirani Airport</option>
+                    <option value="Katcui">Katcui</option>
+                    <option value="Lamaca Airport">Lamaca Airport</option>
+                    <option value="Lukia">Lukia</option>
+                    <option value="McConnell AFB">McConnell AFB</option>
+                    <option value="Mellor">Mellor</option>
+                    <option value="Paphos Airport">Paphos Airport</option>
+                    <option value="Perth International">Perth International</option>
+                    <option value="RAF Scampton">RAF Scampton</option>
+                    <option value="Saba">Saba</option>
+                    <option value="Saint Barthélemy Airport">Saint Barthélemy Airport</option>
+                    <option value="Sauthemptona Airport">Sauthemptona Airport</option>
+                    <option value="Sea Haven">Sea Haven</option>
+                    <option value="Skopelos Airfield">Skopelos Airfield</option>
+                    <option value="Tavaro Seabase">Tavaro Seabase</option>
+                    <option value="Tokyo International Airport">Tokyo International Airport</option>
+                    <option value="Training Centre">Training Centre</option>
+                    <option value="Waterloo">Waterloo</option>
+                </select>
+            </div>
+            <button type="submit">Generate Route</button>
+        </form>
+        <h2>Map</h2>
+        <div id="map"></div>
+        <h2>Route Details</h2>
+        <pre id="routeOutput">Route details will appear here...</pre>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Definice tras a waypointů
+        const routes = {
+            "Abandoned Airfield": {
+                "Tokyo International Airport": ["LD", "NIKON", "IDCS"],
+                "Perth International": ["COC", "CHILY", "SHIBA"],
+            },
+            "Tokyo International Airport": {
+                "Abandoned Airfield": ["IDCS", "NIKON", "SHELL"],
+                "Perth International": ["HONDA", "KNIFE", "TINDR"],
+            },
+            "Perth International": {
+                "Abandoned Airfield": ["SHIBA", "CHILY", "COC"],
+                "Tokyo International Airport": ["TINDR", "KNIFE", "HONDA"],
+            },
+        };
+
+        // Inicializace mapy s obrázkem jako podkladem
+        const map = L.map('map', {
+            crs: L.CRS.Simple, // Použijeme jednoduchý souřadnicový systém
+            zoomDelta: 0.5, // Jemnější ovládání zoomu
+            zoomSnap: 0.5, // Jemnější ovládání zoomu
+        });
+
+        // Rozměry obrázku mapy (v pixelech)
+        const mapImageWidth = 1531;
+        const mapImageHeight = 1145;
+
+
+        // Přidání obrázku jako mapového podkladu
+        const mapBounds = [[0, 0], [mapImageHeight, mapImageWidth]];
+        L.imageOverlay('https://raw.githubusercontent.com/Treelon/ptfs-charts/bcbb089027fd2b50edf4f5da208189a3932d097a/Airspace%20map/Enroute%20Chart%20PTFS.svg', mapBounds).addTo(map);
+
+        // Nastavení počátečního zoomu a středu mapy
+        map.fitBounds(mapBounds, { padding: [50, 50] }); // Přidáme padding pro větší oddálení
+
+        // Funkce pro zobrazení trasy na mapě
+        function showRouteOnMap(waypoints) {
+            map.eachLayer(layer => {
+                if (layer instanceof L.Polyline || layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Simulované souřadnice waypointů (můžeš upravit podle obrázku)
+            const waypointCoords = {
+                "LD": [016, 064],
+                "NIKON": [600, 400],
+                "IDCS": [700, 500],
+                "COC": [400, 200],
+                "CHILY": [450, 250],
+                "SHIBA": [500, 300],
+                "HONDA": [926, 831],
+                "KNIFE": [837, 829],
+                "TINDR": [858, 900],
+                "LETSE": [700, 500],
+                "IOCG": [750, 550],
+                "BULLY": [800, 600],
+            };
+
+            const latLngs = waypoints.map(wp => waypointCoords[wp] || [0, 0]);
+
+            const polyline = L.polyline(latLngs, { color: 'blue' }).addTo(map);
+            map.fitBounds(polyline.getBounds(), { padding: [50, 50] }); // Přidáme padding pro větší oddálení
+
+            // Přidání markerů pro waypointy
+            latLngs.forEach((latLng, index) => {
+                L.marker(latLng).addTo(map)
+                    .bindPopup(`Waypoint ${index + 1}: ${waypoints[index]}`)
+                    .openPopup();
+            });
+        }
+
+        document.getElementById('routeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const from = document.getElementById('from').value;
+            const to = document.getElementById('to').value;
+
+            if (from === to) {
+                alert('Departure and destination cannot be the same!');
+                return;
+            }
+
+            const waypoints = routes[from] && routes[from][to];
+            if (waypoints) {
+                const output = `Route from ${from} to ${to}:\n` +
+                    waypoints.map((wp, index) => `- Waypoint ${index + 1}: ${wp}`).join('\n');
+                document.getElementById('routeOutput').textContent = output;
+                showRouteOnMap(waypoints); // Zobraz trasu na mapě
+            } else {
+                document.getElementById('routeOutput').textContent = 'No route found between the selected airports.';
+            }
+        });
+		
+		map.on('click', function(e) {
+    const coords = e.latlng;
+    console.log(`Kliknuto na: [${coords.lat}, ${coords.lng}]`);
+    alert(`Kliknuto na: [${Math.round(coords.lat)}, ${Math.round(coords.lng)}]`);
+});
+    </script>
+</body>
+</html>
