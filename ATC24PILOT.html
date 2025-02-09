@@ -156,7 +156,7 @@
         // Definice tras a waypointů
         const routes = {
             "Greater Rockford Airport": {
-                "Tokyo International Airport": ["SETHR" "GAVIN" "DINER" "HONDA" ],
+                "Tokyo International Airport": ["SETHR", "GAVIN", "DINER", "HONDA"],
                 "Perth International": ["COC", "CHILY", "SHIBA"],
             },
             "Tokyo International Airport": {
@@ -180,10 +180,10 @@
         const mapImageWidth = 1531;
         const mapImageHeight = 1145;
 
-
         // Přidání obrázku jako mapového podkladu
         const mapBounds = [[0, 0], [mapImageHeight, mapImageWidth]];
-        L.imageOverlay('https://github.com/Fushiftstudio/ATC24PILOT/blob/master/Enroute%20Chart%20PTFS.jpg?raw=true', mapBounds).addTo(map);
+        const mapImageUrl = 'https://raw.githubusercontent.com/Treelon/ptfs-charts/bcbb089027fd2b50edf4f5da208189a3932d097a/Airspace%20map/Enroute%20Chart%20PTFS.svg';
+        L.imageOverlay(mapImageUrl, mapBounds).addTo(map);
 
         // Nastavení počátečního zoomu a středu mapy
         map.fitBounds(mapBounds, { padding: [50, 50] }); // Přidáme padding pro větší oddálení
@@ -199,16 +199,14 @@
             // Simulované souřadnice waypointů (můžeš upravit podle obrázku)
             const waypointCoords = {
                 "ZESTA": [871, 1348],
-				"UDMUG": [763, 1383],
-				"MORRD": [621, 1379],
-				"ABSRS": [518, 1437],
-				"CHAIN": [368, 1438],
-				"NUBER": [176, 1437],
-				"SETHR": [489, 825],
-				"GAVIN": [575, 852],
-				"DINER": [720, 822],
-				"ZESTA": [871, 1348],
-				
+                "UDMUG": [763, 1383],
+                "MORRD": [621, 1379],
+                "ABSRS": [518, 1437],
+                "CHAIN": [368, 1438],
+                "NUBER": [176, 1437],
+                "SETHR": [489, 825],
+                "GAVIN": [575, 852],
+                "DINER": [720, 822],
                 "NIKON": [600, 400],
                 "IDCS": [700, 500],
                 "COC": [400, 200],
@@ -219,7 +217,7 @@
                 "TINDR": [858, 900],
                 "LETSE": [700, 500],
                 "IOCG": [750, 550],
-                "BULLY": [800, 600],:
+                "BULLY": [800, 600],
             };
 
             const latLngs = waypoints.map(wp => waypointCoords[wp] || [0, 0]);
@@ -255,12 +253,12 @@
                 document.getElementById('routeOutput').textContent = 'No route found between the selected airports.';
             }
         });
-		
-		map.on('click', function(e) {
-    const coords = e.latlng;
-    console.log(`Kliknuto na: [${coords.lat}, ${coords.lng}]`);
-    alert(`Kliknuto na: [${Math.round(coords.lat)}, ${Math.round(coords.lng)}]`);
-});
+
+        map.on('click', function(e) {
+            const coords = e.latlng;
+            console.log(`Kliknuto na: [${coords.lat}, ${coords.lng}]`);
+            alert(`Kliknuto na: [${Math.round(coords.lat)}, ${Math.round(coords.lng)}]`);
+        });
     </script>
 </body>
 </html>
