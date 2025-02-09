@@ -183,7 +183,7 @@
 
         // Přidání obrázku jako mapového podkladu
         const mapBounds = [[0, 0], [mapImageHeight, mapImageWidth]];
-        L.imageOverlay('https://raw.githubusercontent.com/Fushiftstudio/ATC24PILOT/3834f89be16651837e700f2a8d0fab3cdeb77050/Enroute%20Chart%20PTFS.svg', mapBounds).addTo(map);
+        L.imageOverlay('https://github.com/Fushiftstudio/ATC24PILOT/blob/master/Enroute%20Chart%20PTFS.jpg?raw=true', mapBounds).addTo(map);
 
         // Nastavení počátečního zoomu a středu mapy
         map.fitBounds(mapBounds, { padding: [50, 50] }); // Přidáme padding pro větší oddálení
