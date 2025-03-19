@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTFS Route Planner</title>
+    <title>PTFS Route Planner test</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
@@ -53,6 +53,7 @@
             margin-top: 20px;
             border-radius: 10px;
             border: 1px solid #ddd;
+            overflow: hidden; /* Přidáno pro zaoblení obrázku */
         }
         #routeOutput {
             margin-top: 20px;
@@ -171,9 +172,9 @@
 
         // Inicializace mapy s obrázkem jako podkladem
         const map = L.map('map', {
-            crs: L.CRS.Simple, // Použijeme jednoduchý souřadnicový systém
-            zoomDelta: 0.5, // Jemnější ovládání zoomu
-            zoomSnap: 0.5, // Jemnější ovládání zoomu
+            crs: L.CRS.Simple,
+            zoomDelta: 0.5,
+            zoomSnap: 0.5,
         });
 
         // Rozměry obrázku mapy (v pixelech)
@@ -182,11 +183,11 @@
 
         // Přidání obrázku jako mapového podkladu
         const mapBounds = [[0, 0], [mapImageHeight, mapImageWidth]];
-        const mapImageUrl = 'https://raw.githubusercontent.com/Treelon/ptfs-charts/bcbb089027fd2b50edf4f5da208189a3932d097a/Airspace%20map/Enroute%20Chart%20PTFS.svg';
+        const mapImageUrl = 'https://github.com/Fushiftstudio/ATC24PILOT/blob/master/Enroute%20Chart%20PTFS.jpg?raw=true';
         L.imageOverlay(mapImageUrl, mapBounds).addTo(map);
 
         // Nastavení počátečního zoomu a středu mapy
-        map.fitBounds(mapBounds, { padding: [50, 50] }); // Přidáme padding pro větší oddálení
+        map.fitBounds(mapBounds, { padding: [50, 50] });
 
         // Funkce pro zobrazení trasy na mapě
         function showRouteOnMap(waypoints) {
@@ -198,32 +199,45 @@
 
             // Simulované souřadnice waypointů (můžeš upravit podle obrázku)
             const waypointCoords = {
-                "ZESTA": [871, 1348],
-                "UDMUG": [763, 1383],
-                "MORRD": [621, 1379],
-                "ABSRS": [518, 1437],
-                "CHAIN": [368, 1438],
-                "NUBER": [176, 1437],
-                "SETHR": [489, 825],
-                "GAVIN": [575, 852],
-                "DINER": [720, 822],
-                "NIKON": [600, 400],
-                "IDCS": [700, 500],
-                "COC": [400, 200],
-                "CHILY": [450, 250],
-                "SHIBA": [500, 300],
-                "HONDA": [926, 831],
-                "KNIFE": [837, 829],
-                "TINDR": [858, 900],
-                "LETSE": [700, 500],
-                "IOCG": [750, 550],
-                "BULLY": [800, 600],
+                // Tokyo
+                "CHILY": [1024, 855],
+                "HONDA": [925, 831],
+                "KNIFE": [836, 828],
+                "ONDER": [812, 757],
+                "ITKO 112.200": [923, 709],
+                "LETSE": [960, 757],
+                "IDCS": [1065, 744],
+                "NIKON": [1045, 669],
+                "IOCG": [967, 664],
+                "ASTRO": [905, 627],
+                "PIPER": [838, 652],
+                "GULEG": [852, 553],
+                "SHIBA": [991, 595],
+                "SHELL": [1059, 510],
+                // PERTH
+                "ZESTA": [869, 1347],
+                "KELLA": [813, 1196],
+                "SISTA": [737, 1173],
+                "SQUID": [905, 1223],
+                "TALIS": [725, 1091],
+                "NOONU": [725, 1091],
+                "WELLS": [906, 1078],
+                "ILKL": [786, 1054],
+                "VOR BTM": [824, 1071],
+                "IPCG": [760, 1017],
+                "VOR ORG": [776, 1007],
+                "IPPH 115.430": [835, 987],
+                "VOR PERTH": [831, 982],
+                "STRAX": [794, 921],
+                "TINDR": [857, 900],
+                "VOR COC": [920, 958],
+                "SHV": [845, 1058],
             };
 
             const latLngs = waypoints.map(wp => waypointCoords[wp] || [0, 0]);
 
             const polyline = L.polyline(latLngs, { color: 'blue' }).addTo(map);
-            map.fitBounds(polyline.getBounds(), { padding: [50, 50] }); // Přidáme padding pro větší oddálení
+            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
 
             // Přidání markerů pro waypointy
             latLngs.forEach((latLng, index) => {
@@ -248,7 +262,7 @@
                 const output = `Route from ${from} to ${to}:\n` +
                     waypoints.map((wp, index) => `- Waypoint ${index + 1}: ${wp}`).join('\n');
                 document.getElementById('routeOutput').textContent = output;
-                showRouteOnMap(waypoints); // Zobraz trasu na mapě
+                showRouteOnMap(waypoints);
             } else {
                 document.getElementById('routeOutput').textContent = 'No route found between the selected airports.';
             }
