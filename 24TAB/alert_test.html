@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ATC24Pilot</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Share Tech Mono', monospace;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    h1 {
+      font-family: 'Share Tech Mono', monospace;
+      color: #0f0;
+      text-shadow: 0 0 10px #0f0, 0 0 20px #00ff00;
+      letter-spacing: 0.15em;
+      margin-bottom: 5px;
+      font-size: 2.5rem;
+    }
+    /* Scanline effect */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      background: linear-gradient(rgba(0,255,0,0.05) 50%, transparent 50%);
+      background-size: 100% 2px;
+      z-index: 9999;
+      animation: scanlineAnim 5s linear infinite;
+    }
+    @keyframes scanlineAnim {
+      0% {background-position: 0 0;}
+      100% {background-position: 0 2px;}
+    }
+    #alerts {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #003300;
+      background: #001100;
+      user-select: none;
+    }
+    #alerts label {
+      display: inline-block;
+      margin-right: 20px;
+      cursor: pointer;
+    }
+    #alerts input {
+      margin-right: 5px;
+      accent-color: #00ff00;
+      cursor: pointer;
+    }
+    input#nicknameInput {
+      padding: 8px;
+      width: 300px;
+      margin-top: 10px;
+      font-size: 16px;
+      background: #000;
+      border: 1px solid #0f0;
+      color: #0f0;
+      outline: none;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #003300;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    th {
+      background: #002200;
+      color: #0f0;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    tr:nth-child(even) { background: #001100; }
+    tr.alert { background: #440000 !important; color: #ff4444 !important; }
+    tr:hover { background: #004400; cursor: pointer; }
+
+    /* Tooltip style */
+    .tooltip {
+      position: absolute;
+      background: #002200dd;
+      color: #0f0;
+      padding: 8px 12px;
+      border: 1px solid #00ff00;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem;
+      pointer-events: none;
+      border-radius: 4px;
+      white-space: pre-line;
+      z-index: 10000;
+      max-width: 320px;
+    }
+
+    /* Sound selector styling */
+    #soundSelector {
+      background: #001100;
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 5px 8px;
+      font-family: monospace;
+      margin-left: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>ATC24Pilot</h1>
+
+  <div id="alerts">
+    <strong>Alerts:</strong>
+    <label><input type="checkbox" id="alertOverspeed" checked> Overspeed &lt;3000 ft</label>
+    <label><input type="checkbox" id="alertProximity" checked> Proximity</label>
+    <label><input type="checkbox" id="alertCrash" checked> Crash (alt &lt;–5 ft)</label>
+    <label style="margin-left:20px;">Alert Sound: 
+      <select id="soundSelector" title="Select alert sound">
+        <option value="default">Default beep</option>
+        <option value="glitch">Glitch beep</option>
+        <option value="retro">Retro beep</option>
+      </select>
+    </label>
+  </div>
+
+  <input type="text" id="nicknameInput" placeholder="Search by pilot nickname...">
+
+  <table id="aircraftTable" cellspacing="0" cellpadding="0">
+    <thead>
+      <tr>
+        <th>Callsign</th><th>Type</th><th>Alt (ft)</th><th>Airspeed (kt)</th>
+        <th>Gnd Speed</th><th>Heading</th><th>Status</th><th>Pilot</th>
+        <th>Wind</th><th>Coords</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const OVERSPEED_KT = 250;
+    const OVERSPEED_ALT_FT = 3000;
+    const PROXIMITY_DIST = 1000;
+    const PROXIMITY_ALT_DIFF = 50;
+    const CRASH_ALT = -5;
+
+    let aircraftData = {}, lastValid = {};
+
+    let alertActive = false;
+    let beepTimeoutId = null;
+    let audioCtx = null;
+
+    // Tooltip element
+    let tooltip = null;
+
+    // Sound packs definition
+    const soundPacks = {
+      default: (ctx, start) => {
+        for(let i=0; i<3; i++) {
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = 880;
+          osc.connect(ctx.destination);
+          osc.start(start + i*0.15);
+          osc.stop(start + i*0.15 + 0.1);
+        }
+      },
+      glitch: (ctx, start) => {
+        for(let i=0; i<3; i++) {
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = 800 + Math.random()*200;
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.5, start + i*0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + i*0.12 + 0.1);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(start + i*0.12);
+          osc.stop(start + i*0.12 + 0.1);
+        }
+      },
+      retro: (ctx, start) => {
+        [1000, 700, 500].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = freq;
+          osc.connect(ctx.destination);
+          osc.start(start + i*0.15);
+          osc.stop(start + i*0.15 + 0.15);
+        });
+      }
+    };
+
+    function startBeepLoop() {
+      if (beepTimeoutId) return;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function beepCycle() {
+        if (!alertActive) {
+          stopBeepLoop();
+          return;
+        }
+        const soundPackName = document.getElementById('soundSelector').value || 'default';
+        const playSound = soundPacks[soundPackName] || soundPacks.default;
+        playSound(audioCtx, audioCtx.currentTime);
+
+        beepTimeoutId = setTimeout(beepCycle, 20000);
+      }
+      beepCycle();
+    }
+
+    function stopBeepLoop() {
+      if (beepTimeoutId) {
+        clearTimeout(beepTimeoutId);
+        beepTimeoutId = null;
+      }
+      if (audioCtx) {
+        audioCtx.close();
+        audioCtx = null;
+      }
+    }
+
+    async function fetchAircraft() {
+      try {
+        const res = await fetch('https://api.duckybot.xyz/atc24/aircraft');
+        const json = await res.json();
+        if (json.code === 200 && json.data && Object.keys(json.data).length) {
+          aircraftData = json.data;
+          lastValid = json.data;
+        } else {
+          console.warn('Using last known data (invalid response)');
+          aircraftData = lastValid;
+        }
+      } catch (e) {
+        console.error('Fetch error, using cache', e);
+        aircraftData = lastValid;
+      }
+      filterAndDisplay();
+    }
+
+    function showTooltip(evt, callsign, data) {
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        document.body.appendChild(tooltip);
+      }
+      const html = `
+Callsign: ${callsign}
+Pilot: ${data.playerName || 'Unknown'}
+Type: ${data.aircraftType || 'Unknown'}
+Altitude: ${data.altitude ?? '—'} ft
+Speed: ${data.speed ?? '—'} kt
+Ground Speed: ${data.groundSpeed?.toFixed(1) ?? '—'} kt
+Heading: ${data.heading ?? '—'}°
+Wind: ${data.wind || '—'}
+Position: X:${data.position.x}, Y:${data.position.y}
+Status: ${data.isOnGround ? 'On Ground 🛬' : 'In Air ✈️'}
+      `;
+      tooltip.textContent = html;
+
+      let x = evt.pageX + 15;
+      let y = evt.pageY + 15;
+
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      if (x + tooltipRect.width > viewportWidth) {
+        x = evt.pageX - tooltipRect.width - 15;
+      }
+      if (y + tooltipRect.height > viewportHeight) {
+        y = evt.pageY - tooltipRect.height - 15;
+      }
+
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+      tooltip.style.display = 'block';
+    }
+    function hideTooltip() {
+      if (tooltip) tooltip.style.display = 'none';
+    }
+
+    function filterAndDisplay() {
+      const filter = document.getElementById('nicknameInput').value.trim().toLowerCase();
+      const tbody = document.querySelector('#aircraftTable tbody');
+      tbody.innerHTML = '';
+
+      const entries = Object.entries(aircraftData)
+        .filter(([cs, a]) => !filter || (a.playerName||'').toLowerCase().includes(filter));
+
+      const proximitySet = new Set();
+      if (document.getElementById('alertProximity').checked) {
+        for (let i = 0; i < entries.length; i++) {
+          for (let j = i + 1; j < entries.length; j++) {
+            const [cs1, a1] = entries[i], [cs2, a2] = entries[j];
+            if (a1.isOnGround || a2.isOnGround) continue;
+            const dx = a1.position.x - a2.position.x;
+            const dy = a1.position.y - a2.position.y;
+            const d = Math.hypot(dx, dy);
+            const dh = Math.abs(a1.altitude - a2.altitude);
+            if (d < 1000 && dh < 50) {
+              proximitySet.add(cs1);
+              proximitySet.add(cs2);
+            }
+          }
+        }
+      }
+
+      let isAnyAlert = false;
+
+      for (const [callsign, a] of entries) {
+        const row = document.createElement('tr');
+        let isAlert = false;
+        let alertMessages = [];
+
+        if (document.getElementById('alertOverspeed').checked &&
+            a.speed > OVERSPEED_KT && a.altitude < OVERSPEED_ALT_FT) {
+          isAlert = true;
+          alertMessages.push('Overspeed');
+        }
+        if (proximitySet.has(callsign)) {
+          isAlert = true;
+          alertMessages.push('Proximity');
+        }
+        if (document.getElementById('alertCrash').checked &&
+            a.altitude < CRASH_ALT) {
+          isAlert = true;
+          alertMessages.push('Crash');
+        }
+
+        if (isAlert) {
+          row.classList.add('alert');
+          isAnyAlert = true;
+        }
+
+        row.innerHTML = `
+          <td>${callsign}${alertMessages.length ? `<span style="color:#ff4444; font-weight:bold; margin-left:5px;">[${alertMessages.join(', ')}]</span>` : ''}</td>
+          <td>${a.aircraftType||'—'}</td>
+          <td>${a.altitude ?? '—'}</td>
+          <td>${a.speed ?? '—'}</td>
+          <td>${a.groundSpeed?.toFixed(1) ?? '—'}</td>
+          <td>${a.heading ?? '—'}</td>
+          <td>${a.isOnGround ? '🛬 Ground' : '✈️ Airborne'}</td>
+          <td>${a.playerName||'—'}</td>
+          <td>${a.wind||'—'}</td>
+          <td>${a.position.x}, ${a.position.y}</td>
+        `;
+
+        row.addEventListener('mousemove', e => showTooltip(e, callsign, a));
+        row.addEventListener('mouseleave', hideTooltip);
+
+        tbody.appendChild(row);
+      }
+
+      if (isAnyAlert && !alertActive) {
+        alertActive = true;
+        startBeepLoop();
+      } else if (!isAnyAlert && alertActive) {
+        alertActive = false;
+        stopBeepLoop();
+      }
+    }
+
+    document.querySelectorAll('#alerts input, #nicknameInput, #soundSelector')
+      .forEach(el => el.addEventListener('change', filterAndDisplay));
+
+    setInterval(() => {
+      if (document.visibilityState === 'visible') fetchAircraft();
+    }, 1000);
+
+    fetchAircraft();
+  </script>
+</body>
+</html>
